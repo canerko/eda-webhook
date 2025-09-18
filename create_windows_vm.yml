@@ -1,0 +1,101 @@
+---
+- name: Provision Windows VM from Template on VMware
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    # --- VMware ve Ortam Bilgileri ---
+    #vcenter_hostname: "htvc8.lp.local"
+    #vcenter_username: "administrator@vsphere.local"
+    # vcenter_password: "{{ AAP Credential }}"
+    datacenter_name: "Datacenter"
+    cluster_name: "Cluster1"
+    datastore_name: "DS-HITACHI-E590"
+    vm_network: "DPG-007"
+    vm_folder: "/Datacenter/vm/Redington/PS/Software-TU"
+    template_name: "win2019-sysprep"
+    # --- Survey'den Alınacak Bilgiler ---
+    new_vm_hostname: "{{ survey_server_name }}"
+    num_cpus: "{{ survey_cpu }}"
+    memory_mb: "{{ survey_mem }}"
+    disk1_size_gb: 80
+    disk2_size_gb: "{{ survey_disk2_gb | default(0) }}"
+    ip_address: "{{ survey_ip }}"
+    subnet_mask: "{{ survey_netmask }}"
+    default_gateway: "10.8.7.250"
+    dns_servers:
+      - "10.8.0.15"
+      - "1.1.1.1"
+    #windows_admin_password: "Lpr00t123!" # <--- Mutlaka AAP Credential kullanın
+  tasks:
+    - name: "Clone the Windows template to create a new VM"
+      community.vmware.vmware_guest:
+        # vCenter Bağlantı Bilgileri
+        #hostname: "{{ vcenter_hostname }}"
+        #username: "{{ vcenter_username }}"
+        #password: "{{ vcenter_password }}"
+        validate_certs: false
+        
+        # Yeni Sanal Makine Bilgileri
+        name: "{{ new_vm_hostname }}"
+        template: "{{ template_name }}"
+        folder: "{{ vm_folder }}"
+        datacenter: "{{ datacenter_name }}"
+        cluster: "{{ cluster_name }}"
+        datastore: "{{ datastore_name }}"
+        
+        # Donanım Konfigürasyonu
+        hardware:
+          num_cpus: "{{ num_cpus }}"
+          memory_mb: "{{ memory_mb }}"
+        
+        # VMware Guest Customization (Sysprep bilgileri)
+        customization:
+          hostname: "{{ new_vm_hostname }}"
+          #password: "{{ windows_admin_password }}"
+          dns_servers: "{{ dns_servers }}" # <--- DNS'i burada bırakmak genellikle sorun çıkarmaz
+          timezone: "Turkey Standard Time"
+        # Ağ Donanım ve IP Ayarları BİRLEŞTİRİLDİ
+        networks:
+          - name: "{{ vm_network }}"
+            # --- IP AYARLARI TEKRAR BURAYA ALINDI ---
+            ip: "{{ ip_address }}"
+            netmask: "{{ subnet_mask }}"
+            gateway: "{{ default_gateway }}"
+            device_type: vmxnet3
+            start_connected: true
+            connected: true
+        
+        state: poweredon
+        wait_for_ip_address: true
+      register: vm_creation_result
+    
+    - name: "Display the new VM's IP address"
+      debug:
+        #msg: "Sanal makine '{{ new_vm_hostname }}' başarıyla oluşturuldu. Atanan IP adresi: {{ vm_creation_result.instance.ipv4 }}"
+        msg: "Sanal makine '{{ new_vm_hostname }}' başarıyla oluşturuldu. Atanan IP adresi: {{ vm_creation_result }}"
+    # ... (diğer tasklar)
+    - name: "customize VM"
+      community.vmware.vmware_guest:
+        name: "{{ new_vm_hostname }}"
+        # vCenter Bağlantı Bilgileri
+        #hostname: "{{ vcenter_hostname }}"
+        #username: "{{ vcenter_username }}"
+        #password: "{{ vcenter_password }}"
+        validate_certs: false
+        #existing_vm: true
+        # VMware Guest Customization (Sysprep bilgileri)
+        customization:
+          hostname: "{{ new_vm_hostname }}"
+          #password: "{{ windows_admin_password }}"
+          dns_servers: "{{ dns_servers }}" # <--- DNS'i burada bırakmak genellikle sorun çıkarmaz
+        networks:
+          - name: "{{ vm_network }}"
+            # --- IP AYARLARI TEKRAR BURAYA ALINDI ---
+            connected: true
+            start_connected: true
+      register: vm_creation_result
+    - name: "Display the new VM's IP address"
+      debug:
+        #msg: "Sanal makine '{{ new_vm_hostname }}' başarıyla oluşturuldu. Atanan IP adresi: {{ vm_creation_result.instance.ipv4 }}"
+        msg: "Sanal makine '{{ new_vm_hostname }}' başarıyla oluşturuldu. Atanan IP adresi: {{ vm_creation_result }}"
