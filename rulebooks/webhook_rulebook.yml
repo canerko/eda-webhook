@@ -13,7 +13,7 @@
 
   rules:
     - name: Check payload
-      condition: event.payload.message == "Create VM"
+      condition: event.payload.message == "Create VM"   
 
   ## Define the action we should take should the condition be met
 
@@ -22,3 +22,4 @@
         #  name: hello.yml
         run_job_template:
           name: hello world job template
+          organization: Default
