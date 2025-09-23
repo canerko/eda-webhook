@@ -1,5 +1,6 @@
+---
 - hosts: localhost
   connection: local
   tasks:
     - debug:
-        msg: "Hello world!"
+        msg: "Hello world! vcpu: {{ vcpu | default('undefined') }} - memory: {{ memory | default('undefined') }} - disksize: {{ disksize | default('undefined') }}"
