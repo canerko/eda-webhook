@@ -23,3 +23,7 @@
         run_job_template:
           name: hello world job template
           organization: Default
+          extra_vars:
+            vcpu: "{{ event.payload.vcpu }}"
+            memory: "{{ event.payload.memory }}"
+            disksize: "{{ event.payload.disksize }}"
