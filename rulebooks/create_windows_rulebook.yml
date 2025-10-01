@@ -27,4 +27,5 @@
             extra_vars:
               num_cpus: "{{ event.payload.vcpu }}"
               memory_mb: "{{ event.payload.memory }}"
-              #disk2_size_gb: "{{ event.payload.disksize }}"
+              new_vm_hostname: "{{ event.payload.new_vm_hostname }}"
+              disk2_size_gb: "{{ event.payload.disksize }}"
